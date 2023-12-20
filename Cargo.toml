@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 # Remember to remove "dynamic_linking" before releasing your game!
 bevy = { version = "0.12.1", features = ["dynamic_linking"] }
-
+rand = "0.8.5"
