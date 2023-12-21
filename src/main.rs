@@ -1,5 +1,5 @@
 
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::{prelude::*, window::PrimaryWindow, app::AppExit};
 use rand::prelude::*;
 
 pub const PLAYER_SPEED: f32 = 500.0;
@@ -7,6 +7,7 @@ pub const PLAYER_SIZE: f32 = 64.0; // this is the player sprite size
 pub const NUM_OF_ENEMIES: usize = 4;
 pub const ENEMY_SPEED: f32 = 200.0;
 pub const ENEMY_SIZE: f32 = 64.0; // this is the enemy sprite size
+pub const ENEMY_SPAWN_TIME: f32 = 5.0;
 pub const NUM_OF_STARS: usize = 10;
 pub const STAR_SIZE: f32 = 30.0; // this is the star sprite size
 pub const STAR_SPAWN_TIME: f32 = 1.0;
@@ -15,7 +16,10 @@ fn main() {
     App::new()
     .add_plugins(DefaultPlugins)
     .init_resource::<Score>()
+    .init_resource::<HighScores>()
     .init_resource::<StarSpawnTimer>()
+    .init_resource::<EnemySpawnTimer>()
+    .add_event::<GameOver>()
     .add_systems(Startup,
                  (spawn_player, 
                     spawn_camera, 
@@ -32,7 +36,13 @@ fn main() {
                     player_hit_star,
                     update_score,
                     tick_star_spawn_timer,
-                    spawn_stars_over_time)
+                    spawn_stars_over_time,
+                    tick_enemy_spawn_timer,
+                    spawn_enemies_over_time,
+                    exit_game,
+                    handle_game_over,
+                    update_high_scores,
+                    high_scores_updated)
             )
     .run();
 }
@@ -49,14 +59,21 @@ pub struct Enemy {
 #[derive(Component)]
 pub struct Star {}
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct Score {
     pub value: u32,
 }
 
-impl Default for Score {
+#[derive(Resource, Debug)]
+pub struct HighScores {
+    pub scores: Vec<(String, u32)>,
+}
+
+impl Default for HighScores {
     fn default() -> Self {
-        Score { value: 0 }
+        HighScores {
+            scores: Vec::new(),
+        }
     }
 }
 
@@ -72,6 +89,25 @@ impl Default for StarSpawnTimer {
                                  TimerMode::Repeating),
         }
     }
+}
+
+#[derive(Resource)]
+pub struct EnemySpawnTimer {
+    pub timer: Timer,
+}
+
+impl Default for EnemySpawnTimer {
+    fn default() -> Self {
+        EnemySpawnTimer {
+            timer: Timer::from_seconds(ENEMY_SPAWN_TIME,
+                                 TimerMode::Repeating),
+        }
+    }
+}
+
+#[derive(Event)]
+pub struct GameOver {
+    pub score: u32,
 }
 
 pub fn spawn_player(
@@ -114,21 +150,9 @@ pub fn spawn_enemies(
 ) {
     let window = window_query.get_single().unwrap();
 
-    for _ in 0..NUM_OF_ENEMIES {
-        let random_x = random::<f32>() * window.width();
-        let random_y = random::<f32>() * window.height();
-
-        commands.spawn((
-            SpriteBundle {
-                transform: Transform::from_xyz(random_x, random_y, 0.0),
-                texture: asset_server.load("sprites/ball_red_large.png"),
-                ..default()
-            },
-            Enemy {
-                direction: Vec2::new(random::<f32>(), random::<f32>()).normalize(),
-            }
-        ));
-    }
+    (0..NUM_OF_ENEMIES).for_each(|_| {
+        enemy_spawn(window, &mut commands, &asset_server);
+    });
 }
 
 pub fn spawn_stars(
@@ -280,7 +304,9 @@ pub fn enemy_hit_player(
     mut commands: Commands,
     mut player_query: Query<(Entity, &Transform), With<Player>>,
     enemy_query: Query<&Transform, With<Enemy>>,
-    asset_server: Res<AssetServer>
+    asset_server: Res<AssetServer>,
+    mut game_over_event_writer: EventWriter<GameOver>,
+    score: Res<Score>
 ) {
     if let Ok((player_entity, player_transform)) = player_query.get_single_mut() {
         for enemy_transform in enemy_query.iter() {
@@ -298,6 +324,7 @@ pub fn enemy_hit_player(
                     settings: PlaybackSettings::DESPAWN,
                 });
                 commands.entity(player_entity).despawn();
+                game_over_event_writer.send(GameOver { score: score.value });
                 break;
             }
         }
@@ -361,6 +388,25 @@ pub fn spawn_stars_over_time(
     }
 }
 
+pub fn tick_enemy_spawn_timer(
+    mut enemy_spawn_timer: ResMut<EnemySpawnTimer>,
+    time: Res<Time>
+) {
+    enemy_spawn_timer.timer.tick(time.delta());
+}
+
+pub fn spawn_enemies_over_time(
+    mut commands: Commands,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    asset_server: Res<AssetServer>,
+    enemy_spawn_timer: Res<EnemySpawnTimer>
+) {
+    if enemy_spawn_timer.timer.finished() {
+        let window = window_query.get_single().unwrap();
+        enemy_spawn(window, &mut commands, &asset_server);
+    }
+}
+
 fn star_spawn(
     window: &Window, 
     commands: &mut Commands, 
@@ -377,4 +423,54 @@ fn star_spawn(
         },
         Star {}
     ));
+}
+
+fn enemy_spawn(
+    window: &Window,
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>
+) {
+    let random_x = random::<f32>() * window.width();
+    let random_y = random::<f32>() * window.height();
+
+    commands.spawn((
+        SpriteBundle {
+            transform: Transform::from_xyz(random_x, random_y, 0.0),
+            texture: asset_server.load("sprites/ball_red_large.png"),
+            ..default()
+        },
+        Enemy {
+            direction: Vec2::new(random::<f32>(), random::<f32>()).normalize(),
+        }
+    ));
+}
+
+pub fn exit_game(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut app_exit_event_writer: EventWriter<AppExit>,
+) {
+    if keyboard_input.just_pressed(KeyCode::Escape) {
+        app_exit_event_writer.send(AppExit);
+    }
+}
+
+pub fn handle_game_over(mut game_over_event_reader: EventReader<GameOver>) {
+    game_over_event_reader.read().for_each(|event| {
+        println!("Game Over! Score: {}", event.score);
+    })
+}
+
+pub fn update_high_scores(
+    mut game_over_event_reader: EventReader<GameOver>,
+    mut high_scores: ResMut<HighScores>
+) {
+    game_over_event_reader.read().for_each(|event| {
+        high_scores.scores.push(("Player".to_string(), event.score));
+    })
+}
+
+pub fn high_scores_updated(high_scores: Res<HighScores>) {
+    if high_scores.is_changed() {
+        println!("High Scores: {:?}", high_scores);
+    }
 }
