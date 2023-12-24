@@ -2,7 +2,7 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use rand::random;
 
-use crate::star::{
+use crate::game::star::{
     components::*, 
     resources::*,
     NUM_OF_STARS,
@@ -20,6 +20,14 @@ pub fn spawn_stars(
     });
 }
 
+pub fn despawn_stars(
+    mut commands: Commands,
+    star_query: Query<Entity, With<Star>>
+) {
+    star_query.iter().for_each(|star_entity| {
+        commands.entity(star_entity).despawn();
+    })
+}
 
 pub fn tick_star_spawn_timer(
     mut star_spawn_timer: ResMut<StarSpawnTimer>,

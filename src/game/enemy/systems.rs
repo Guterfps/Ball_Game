@@ -2,7 +2,7 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use rand::random;
 
-use crate::enemy::{
+use crate::game::enemy::{
     components::*, 
     resources::*,
     NUM_OF_ENEMIES,
@@ -23,6 +23,14 @@ pub fn spawn_enemies(
     });
 }
 
+pub fn enemy_despawn(
+    mut commands: Commands,
+    enemy_query: Query<Entity, With<Enemy>>
+) {
+    enemy_query.iter().for_each(|enemy_entity| {
+        commands.entity(enemy_entity).despawn();
+    });
+}
 
 pub fn enemy_movement(
     mut enemy_query: Query<(&mut Transform, &Enemy)>,

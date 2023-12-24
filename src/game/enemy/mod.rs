@@ -8,6 +8,9 @@ mod systems;
 use systems::*;
 use resources::*;
 
+use crate::AppState;
+use crate::game::SimulationState;
+
 pub const NUM_OF_ENEMIES: usize = 4;
 pub const ENEMY_SPEED: f32 = 200.0;
 pub const ENEMY_SIZE: f32 = 64.0; // this is the enemy sprite size
@@ -27,14 +30,20 @@ impl Plugin for EnemyPlugin {
              EnemySystemSet::Movment
                 .before(EnemySystemSet::Confinement))
         .init_resource::<EnemySpawnTimer>()
-        .add_systems(Startup, spawn_enemies)
+        .add_systems(OnEnter(AppState::Game), 
+            spawn_enemies)
         .add_systems(Update, (
                     enemy_movement.in_set(EnemySystemSet::Movment), 
                     update_enemy_direction.in_set(EnemySystemSet::Confinement),
                     confine_enemy_movement.in_set(EnemySystemSet::Confinement),
                     tick_enemy_spawn_timer,
                     spawn_enemies_over_time
-        ));
+                )
+                .run_if(in_state(AppState::Game))
+                .run_if(in_state(SimulationState::Running))
+        )
+        .add_systems(OnExit(AppState::Game), 
+            enemy_despawn);
     }
 }
 
