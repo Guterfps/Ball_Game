@@ -6,11 +6,17 @@ mod player;
 mod score;
 mod star;
 mod systems;
+mod pause_menu;
+mod game_over_menu;
+mod hud;
 
 use enemy::EnemyPlugin;
 use player::PlayerPlugin;
 use score::ScorePlugin;
 use star::StarPlugin;
+use pause_menu::PauseMenuPlugin;
+use game_over_menu::GameOverMenuPlugin;
+use hud::HUDPlugin;
 use crate::events::GameOver;
 use crate::AppState;
 
@@ -29,7 +35,11 @@ impl Plugin for GamePlugin {
             EnemyPlugin, 
             PlayerPlugin, 
             ScorePlugin, 
-            StarPlugin))
+            StarPlugin,
+            PauseMenuPlugin,
+            GameOverMenuPlugin,
+            HUDPlugin,
+        ))
         .add_systems(Update,
         toggle_simulation.run_if(in_state(AppState::Game)))
         .add_systems(OnExit(AppState::Game),
