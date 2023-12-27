@@ -6,7 +6,9 @@ use crate::game::star::{
     components::*, 
     resources::*,
     NUM_OF_STARS,
+    STAR_SIZE
 };
+use crate::game::enemy::confine_actor_axis;
 
 pub fn spawn_stars(
     mut commands: Commands,
@@ -54,8 +56,13 @@ fn star_spawn(
     commands: &mut Commands, 
     asset_server: &Res<AssetServer>
 ) {
-    let random_x = random::<f32>() * window.width();
-    let random_y = random::<f32>() * window.height();
+    let window_with = window.width();
+    let window_height = window.height();
+    let mut random_x = random::<f32>() * window_with;
+    let mut random_y = random::<f32>() * window_height;
+
+    confine_actor_axis(&mut random_x, window_with, STAR_SIZE);
+    confine_actor_axis(&mut random_y, window_height, STAR_SIZE);
 
     commands.spawn((
         SpriteBundle {
@@ -66,5 +73,3 @@ fn star_spawn(
         Star {}
     ));
 }
-
-
