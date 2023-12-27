@@ -4,16 +4,16 @@ use bevy::{prelude::*, app::AppExit};
 use super::components::*;
 use crate::{
     main_menu::styles::*, 
-    game::score::resources::HighScores,
+    events::GameOver,
     AppState,
 };
 
 pub fn spawn_game_over_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    high_scores: Res<HighScores>
+    mut game_over_event_reader: EventReader<GameOver>
 ) {
-    if let Some(score) = high_scores.scores.last() {
+    game_over_event_reader.read().for_each(|event| {
         commands.spawn(
             (NodeBundle {
                 style: MAIN_MENU_STYLE,
@@ -45,8 +45,8 @@ pub fn spawn_game_over_menu(
                         text: Text {
                             sections: vec![
                                 TextSection::new(
-                                    format!("Game Over!\n {} final score: {}", 
-                                            score.0, score.1),
+                                    format!("Game Over!\n final score: {}", 
+                                            event.score),
                                     get_title_text_style(&asset_server)
                                 )],
                                 alignment: TextAlignment::Center,
@@ -140,8 +140,9 @@ pub fn spawn_game_over_menu(
                 });
             });
         });
-    }
+    });
 }
+
 
 pub fn despawn_game_over_menu(
     mut commands: Commands,
