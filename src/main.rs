@@ -20,6 +20,7 @@ fn main() {
                 handle_game_over,
                 transition_to_game_state,
                 transition_to_main_menu_state,
+                move_camera_when_window_resize
     ))
     .run();
 }

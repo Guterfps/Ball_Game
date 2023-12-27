@@ -1,7 +1,10 @@
 
-use bevy::{prelude::*, window::PrimaryWindow, app::AppExit};
+use bevy::{prelude::*, window::{PrimaryWindow, WindowResized}, app::AppExit};
 
 use crate::{events::*, AppState};
+
+#[derive(Component)]
+pub struct Camera;
 
 pub fn spawn_camera(
     mut commands: Commands,
@@ -9,13 +12,26 @@ pub fn spawn_camera(
 ) {
     let window = window_query.get_single().unwrap();
 
-    commands.spawn(
+    commands.spawn((
         Camera2dBundle {
             transform: Transform::from_xyz(window.width() / 2.0, 
                                         window.height() / 2.0, 0.0),
             ..default()
-        }
+        },
+        Camera {}
+    )
     );
+}
+
+pub fn move_camera_when_window_resize(
+    mut resize_event: EventReader<WindowResized>,
+    mut camera_query: Query<&mut Transform, With<Camera>>
+) {
+    resize_event.read().for_each(|event| {
+        let mut camera_transform = camera_query.single_mut();
+        camera_transform.translation.x = event.width / 2.0;
+        camera_transform.translation.y = event.height / 2.0;
+    });
 }
 
 pub fn transition_to_game_state(
