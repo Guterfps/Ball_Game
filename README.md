@@ -2,7 +2,7 @@
 
 ## Description
 
-A simple game built with Rust and [Bevy](https://bevyengine.org/), a data-driven game engine..
+A simple game built with Rust and [Bevy](https://bevyengine.org/), a data-driven game engine.
 
 ## Getting Started
 
@@ -12,8 +12,8 @@ Visit [Game Website](https://guterfps.github.io/Ball_Game/) to play the game in 
 
 ### Play Locally
 
-- Windows (64-bit): [Download Link](#)
-- Linux (64-bit): [Download Link](#)
+- Windows (64-bit): [Download Link](https://github.com/Guterfps/Ball_Game/files/13800755/Ball_Game.zip)
+- Linux (64-bit): [Download Link](https://github.com/Guterfps/Ball_Game/files/13800873/Ball_Game-Windows-64bit.zip)
 
 ### Build from source
 
