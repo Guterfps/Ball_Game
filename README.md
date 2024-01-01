@@ -12,8 +12,8 @@ Visit [Game Website](https://guterfps.github.io/Ball_Game/) to play the game in 
 
 ### Play Locally
 
-- Windows (64-bit): [Download Link](https://github.com/Guterfps/Ball_Game/files/13800873/Ball_Game-Windows-64bit.zip)
-- Linux (64-bit): [Download Link](https://github.com/Guterfps/Ball_Game/files/13800755/Ball_Game.zip)
+- Windows (64-bit): [Download Link](https://github.com/Guterfps/Ball_Game/files/13805496/Ball_Game-Windows-64bit.zip)
+- Linux (64-bit): [Download Link](https://github.com/Guterfps/Ball_Game/files/13805544/Ball_Game.zip)
 
 ### Build from source
 
