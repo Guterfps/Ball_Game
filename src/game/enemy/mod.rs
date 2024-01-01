@@ -11,6 +11,8 @@ use resources::*;
 use crate::AppState;
 use crate::game::SimulationState;
 
+use super::player::PlayerSystemSet;
+
 pub const NUM_OF_ENEMIES: usize = 4;
 pub const ENEMY_SPEED: f32 = 200.0;
 pub const ENEMY_SIZE: f32 = 64.0; // this is the enemy sprite size
@@ -18,7 +20,7 @@ pub const ENEMY_SIZE: f32 = 64.0; // this is the enemy sprite size
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum EnemySystemSet {
     Movment,
-    Confinement
+    Confinement,
 }
 
 pub struct EnemyPlugin;
@@ -31,7 +33,8 @@ impl Plugin for EnemyPlugin {
                 .before(EnemySystemSet::Confinement))
         .init_resource::<EnemySpawnTimer>()
         .add_systems(OnEnter(AppState::Game), 
-            spawn_enemies)
+            (apply_deferred.after(PlayerSystemSet::PlayerSpawn),
+                    spawn_enemies).chain())
         .add_systems(Update, (
                     enemy_movement.in_set(EnemySystemSet::Movment), 
                     update_enemy_direction.in_set(EnemySystemSet::Confinement),

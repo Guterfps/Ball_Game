@@ -1,6 +1,6 @@
 
 use bevy::{prelude::*, window::PrimaryWindow};
-use rand::random;
+use rand::{random, Rng};
 
 use crate::game::enemy::{
     components::*, 
@@ -10,16 +10,18 @@ use crate::game::enemy::{
     ENEMY_SPEED,
     confine_actor_axis  
 };
+use crate::game::player::components::Player;
 
 pub fn spawn_enemies(
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    asset_server: Res<AssetServer>
+    asset_server: Res<AssetServer>,
+    player_query: Query<&Transform, With<Player>>
 ) {
     let window = window_query.get_single().unwrap();
 
     (0..NUM_OF_ENEMIES).for_each(|_| {
-        enemy_spawn(window, &mut commands, &asset_server);
+        enemy_spawn(window, &mut commands, &asset_server, &player_query);
     });
 }
 
@@ -114,11 +116,12 @@ pub fn spawn_enemies_over_time(
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
     asset_server: Res<AssetServer>,
-    enemy_spawn_timer: Res<EnemySpawnTimer>
+    enemy_spawn_timer: Res<EnemySpawnTimer>,
+    player_query: Query<&Transform, With<Player>>
 ) {
     if enemy_spawn_timer.timer.finished() {
         let window = window_query.get_single().unwrap();
-        enemy_spawn(window, &mut commands, &asset_server);
+        enemy_spawn(window, &mut commands, &asset_server, &player_query);
     }
 }
 
@@ -126,19 +129,38 @@ pub fn spawn_enemies_over_time(
 fn enemy_spawn(
     window: &Window,
     commands: &mut Commands,
-    asset_server: &Res<AssetServer>
+    asset_server: &Res<AssetServer>,
+    player_query: &Query<&Transform, With<Player>>
 ) {
-    let random_x = random::<f32>() * window.width();
-    let random_y = random::<f32>() * window.height();
-    
-    commands.spawn((
-        SpriteBundle {
-            transform: Transform::from_xyz(random_x, random_y, 0.0),
-            texture: asset_server.load("sprites/ball_red_large.png"),
-            ..default()
-        },
-        Enemy {
-            direction: Vec2::new(random::<f32>(), random::<f32>()).normalize(),
+    if let Ok(player_transform) = player_query.get_single() {
+        let player_translation = player_transform.translation;
+        let window_width = window.width();
+        let window_height = window.height();
+        let mut enemy_pos = Vec3::new(random::<f32>() * window_width, 
+                                random::<f32>() * window_height, 0.0);        
+        let mut fail_safe = 100;
+        let mut rng = rand::thread_rng();
+
+        while (player_translation.distance(enemy_pos) < (ENEMY_SIZE * 2.0))
+                && (fail_safe > 0) {
+            enemy_pos.x = rng.gen::<f32>() * window_width;
+            enemy_pos.y = rng.gen::<f32>() * window_height;
+            
+            fail_safe -= 1;
         }
-    ));
+
+        if fail_safe > 0 {
+            commands.spawn((
+                SpriteBundle {
+                    transform: Transform::from_translation(enemy_pos),
+                    texture: asset_server.load("sprites/ball_red_large.png"),
+                    ..default()
+                },
+                Enemy {
+                    direction: Vec2::new(random::<f32>(), random::<f32>()).normalize(),
+                }
+            ));
+        }
+
+    }
 }
