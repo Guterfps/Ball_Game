@@ -29,8 +29,6 @@ impl Plugin for GamePlugin {
         app
         .add_state::<SimulationState>()
         .add_event::<GameOver>()
-        .add_systems(OnEnter(AppState::Game), 
-                    pause_simulation)
         .add_plugins((
             EnemyPlugin, 
             PlayerPlugin, 

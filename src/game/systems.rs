@@ -18,16 +18,16 @@ pub fn resume_simulation(
 pub fn toggle_simulation(
     keyboard_input: Res<Input<KeyCode>>,
     simulation_state: Res<State<SimulationState>>,
-    mut next_game_state: ResMut<NextState<SimulationState>>
+    simulation_next_state: ResMut<NextState<SimulationState>>
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         let state = simulation_state.get();
         if *state == SimulationState::Running {
-            next_game_state.set(SimulationState::Paused);
+            pause_simulation(simulation_next_state);
             println!("Paused");
         }
-        if *state == SimulationState::Paused {
-            next_game_state.set(SimulationState::Running);
+        else if *state == SimulationState::Paused {
+            resume_simulation(simulation_next_state);
             println!("Running");
         }
     }
